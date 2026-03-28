@@ -18,3 +18,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# Claude Code local session config (machine-specific, not project config)
+.claude/settings.local.json
