@@ -3,6 +3,7 @@ dist/
 
 # env files — never commit secrets
 .env
+.env.test
 .env.local
 .env.*.local
 
