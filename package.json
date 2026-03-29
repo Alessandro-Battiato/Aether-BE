@@ -15,6 +15,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:test": "dotenv -e .env.test -- prisma migrate deploy",
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.js",
     "db:studio": "prisma studio",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^2.1.4",
+    "dotenv-cli": "^7.4.4",
     "prisma": "^5.22.0",
     "supertest": "^7.0.0",
     "vitest": "^2.1.4"
