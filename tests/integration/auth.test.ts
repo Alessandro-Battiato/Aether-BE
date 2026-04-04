@@ -3,17 +3,15 @@
  *
  * These tests hit a real Express app wired to a real PostgreSQL database.
  * Set TEST_DATABASE_URL in .env.test and run `prisma migrate deploy` first.
- *
- * The AI service is mocked so no OpenRouter credits are consumed.
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 import app from '../../src/app.js';
 
-// DATABASE_URL is set to the test DB by tests/setup.js before this file loads.
+// DATABASE_URL is set to the test DB by tests/setup.ts before this file loads.
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
@@ -23,13 +21,12 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  // Clean in cascade-safe order
   await prisma.message.deleteMany();
   await prisma.chat.deleteMany();
   await prisma.user.deleteMany();
 });
 
-// ─── POST /api/v1/auth/register ─────────────────────────────────────────────────
+// ─── POST /api/v1/auth/register ──────────────────────────────────────────────
 describe('POST /api/v1/auth/register', () => {
   it('returns 201 and a token for valid input', async () => {
     const res = await request(app).post('/api/v1/auth/register').send({
@@ -87,11 +84,11 @@ describe('POST /api/v1/auth/register', () => {
       passwordConfirm: 'different456',
     });
     expect(res.status).toBe(400);
-    expect(res.body.errors.some((e) => e.path === 'passwordConfirm')).toBe(true);
+    expect(res.body.errors.some((e: { path: string }) => e.path === 'passwordConfirm')).toBe(true);
   });
 });
 
-// ─── POST /api/v1/auth/login ─────────────────────────────────────────────────────
+// ─── POST /api/v1/auth/login ─────────────────────────────────────────────────
 describe('POST /api/v1/auth/login', () => {
   beforeEach(async () => {
     await request(app).post('/api/v1/auth/register').send({
@@ -129,7 +126,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 });
 
-// ─── GET /api/v1/auth/me ─────────────────────────────────────────────────────────
+// ─── GET /api/v1/auth/me ─────────────────────────────────────────────────────
 describe('GET /api/v1/auth/me', () => {
   it('returns the user when authenticated', async () => {
     const reg = await request(app).post('/api/v1/auth/register').send({
@@ -141,7 +138,7 @@ describe('GET /api/v1/auth/me', () => {
 
     const res = await request(app)
       .get('/api/v1/auth/me')
-      .set('Authorization', `Bearer ${reg.body.data.token}`);
+      .set('Authorization', `Bearer ${reg.body.data.token as string}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data.user.email).toBe('alice@test.com');

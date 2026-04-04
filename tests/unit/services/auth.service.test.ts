@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// ─── Mock Prisma before importing the service ────────────────────────────────
 vi.mock('../../../src/lib/prisma.js', () => ({
   prisma: {
     user: {
@@ -10,11 +9,10 @@ vi.mock('../../../src/lib/prisma.js', () => ({
   },
 }));
 
-// ─── Mock bcrypt to keep tests fast (no real hashing) ────────────────────────
 vi.mock('bcryptjs', () => ({
   default: {
-    hash: vi.fn(async (pw) => `hashed:${pw}`),
-    compare: vi.fn(async (plain, hashed) => hashed === `hashed:${plain}`),
+    hash: vi.fn(async (pw: string) => `hashed:${pw}`),
+    compare: vi.fn(async (plain: string, hashed: string) => hashed === `hashed:${plain}`),
   },
 }));
 
@@ -24,16 +22,15 @@ import { AppError } from '../../../src/middleware/errorHandler.js';
 
 beforeEach(() => vi.clearAllMocks());
 
-// ─── register ────────────────────────────────────────────────────────────────
 describe('register', () => {
   it('creates a user and returns a token when the email is new', async () => {
-    prisma.user.findUnique.mockResolvedValue(null);
-    prisma.user.create.mockResolvedValue({
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.user.create).mockResolvedValue({
       id: 'user-1',
       email: 'alice@example.com',
       name: 'Alice',
       createdAt: new Date(),
-    });
+    } as never);
 
     const result = await register({
       email: 'alice@example.com',
@@ -47,7 +44,7 @@ describe('register', () => {
   });
 
   it('throws 409 when email is already taken', async () => {
-    prisma.user.findUnique.mockResolvedValue({ id: 'existing' });
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: 'existing' } as never);
 
     await expect(
       register({ email: 'taken@example.com', password: 'secret123', name: 'Bob' }),
@@ -59,17 +56,16 @@ describe('register', () => {
   });
 });
 
-// ─── login ───────────────────────────────────────────────────────────────────
 describe('login', () => {
   it('returns user and token for valid credentials', async () => {
-    prisma.user.findUnique.mockResolvedValue({
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: 'user-1',
       email: 'alice@example.com',
       password: 'hashed:correct-password',
       name: 'Alice',
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
+    } as never);
 
     const result = await login({ email: 'alice@example.com', password: 'correct-password' });
 
@@ -79,12 +75,12 @@ describe('login', () => {
   });
 
   it('throws 401 for wrong password', async () => {
-    prisma.user.findUnique.mockResolvedValue({
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: 'user-1',
       email: 'alice@example.com',
       password: 'hashed:correct-password',
       name: 'Alice',
-    });
+    } as never);
 
     await expect(
       login({ email: 'alice@example.com', password: 'wrong' }),
@@ -92,7 +88,7 @@ describe('login', () => {
   });
 
   it('throws 401 when user does not exist', async () => {
-    prisma.user.findUnique.mockResolvedValue(null);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
     await expect(
       login({ email: 'nobody@example.com', password: 'any' }),
@@ -100,18 +96,17 @@ describe('login', () => {
   });
 });
 
-// ─── getMe ───────────────────────────────────────────────────────────────────
 describe('getMe', () => {
   it('returns the user record for a valid id', async () => {
     const user = { id: 'user-1', email: 'alice@example.com', name: 'Alice', createdAt: new Date() };
-    prisma.user.findUnique.mockResolvedValue(user);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(user as never);
 
     const result = await getMe('user-1');
     expect(result).toEqual(user);
   });
 
   it('throws 404 when the user is not found', async () => {
-    prisma.user.findUnique.mockResolvedValue(null);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
     await expect(getMe('missing-id')).rejects.toMatchObject({ statusCode: 404 });
   });

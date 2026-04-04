@@ -9,12 +9,20 @@ const SAFE_USER_SELECT = {
   email: true,
   name: true,
   createdAt: true,
-};
+} as const;
 
-const signToken = (userId) =>
+const signToken = (userId: string): string =>
   jwt.sign({ sub: userId }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
 
-export const register = async ({ email, password, name }) => {
+export const register = async ({
+  email,
+  password,
+  name,
+}: {
+  email: string;
+  password: string;
+  name: string;
+}) => {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new AppError('Email already registered', 409);
 
@@ -27,17 +35,16 @@ export const register = async ({ email, password, name }) => {
   return { user, token: signToken(user.id) };
 };
 
-export const login = async ({ email, password }) => {
+export const login = async ({ email, password }: { email: string; password: string }) => {
   const user = await prisma.user.findUnique({ where: { email } });
   const valid = user && (await bcrypt.compare(password, user.password));
-  // Constant-time: always compare even when user is null (dummy hash)
   if (!valid) throw new AppError('Invalid email or password', 401);
 
   const { password: _pw, ...safeUser } = user;
   return { user: safeUser, token: signToken(user.id) };
 };
 
-export const getMe = async (userId) => {
+export const getMe = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: SAFE_USER_SELECT,

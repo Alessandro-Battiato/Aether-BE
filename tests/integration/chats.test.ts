@@ -3,16 +3,15 @@
  *
  * The AI service is mocked — no real tokens are sent to OpenRouter.
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import { describe, it, expect, afterAll, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-// Mock AI before any app imports resolve
 vi.mock('../../src/services/ai.service.js', () => ({
   generateResponse: vi.fn().mockResolvedValue('Mocked AI response'),
   generateResponseStream: vi.fn(),
-  getModels: vi.fn().mockImplementation(({ page = 1, limit = 20 } = {}) =>
+  getModels: vi.fn().mockImplementation(({ page = 1, limit = 20 }: { page?: number; limit?: number } = {}) =>
     Promise.resolve({
       models: [{ id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' }],
       total: 1,
@@ -25,25 +24,23 @@ vi.mock('../../src/services/ai.service.js', () => ({
 
 import app from '../../src/app.js';
 
-// DATABASE_URL is set to the test DB by tests/setup.js before this file loads.
+// DATABASE_URL is set to the test DB by tests/setup.ts before this file loads.
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-const registerAndLogin = async (email = 'test@test.com') => {
+const registerAndLogin = async (email = 'test@test.com'): Promise<string> => {
   const res = await request(app).post('/api/v1/auth/register').send({
     name: 'Test User',
     email,
     password: 'password123',
     passwordConfirm: 'password123',
   });
-  return res.body.data.token;
+  return res.body.data.token as string;
 };
 
-const authHeader = (token) => ({ Authorization: `Bearer ${token}` });
+const authHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
 
-// ─── Setup / teardown ─────────────────────────────────────────────────────────
 afterAll(() => prisma.$disconnect());
 
 beforeEach(async () => {
@@ -52,7 +49,7 @@ beforeEach(async () => {
   await prisma.user.deleteMany();
 });
 
-// ─── GET /api/v1/chats ───────────────────────────────────────────────────────────
+// ─── GET /api/v1/chats ────────────────────────────────────────────────────────
 describe('GET /api/v1/chats', () => {
   it('returns an empty array when the user has no chats', async () => {
     const token = await registerAndLogin();
@@ -68,7 +65,7 @@ describe('GET /api/v1/chats', () => {
   });
 });
 
-// ─── POST /api/v1/chats ──────────────────────────────────────────────────────────
+// ─── POST /api/v1/chats ───────────────────────────────────────────────────────
 describe('POST /api/v1/chats', () => {
   it('creates a chat with default title', async () => {
     const token = await registerAndLogin();
@@ -92,12 +89,12 @@ describe('POST /api/v1/chats', () => {
   });
 });
 
-// ─── GET /api/v1/chats/:chatId ───────────────────────────────────────────────────
+// ─── GET /api/v1/chats/:chatId ────────────────────────────────────────────────
 describe('GET /api/v1/chats/:chatId', () => {
   it('returns the chat with its messages', async () => {
     const token = await registerAndLogin();
     const create = await request(app).post('/api/v1/chats').set(authHeader(token)).send({});
-    const chatId = create.body.data.chat.id;
+    const chatId = create.body.data.chat.id as string;
 
     const res = await request(app).get(`/api/v1/chats/${chatId}`).set(authHeader(token));
 
@@ -111,19 +108,19 @@ describe('GET /api/v1/chats/:chatId', () => {
     const token2 = await registerAndLogin('user2@test.com');
 
     const create = await request(app).post('/api/v1/chats').set(authHeader(token1)).send({});
-    const chatId = create.body.data.chat.id;
+    const chatId = create.body.data.chat.id as string;
 
     const res = await request(app).get(`/api/v1/chats/${chatId}`).set(authHeader(token2));
     expect(res.status).toBe(404);
   });
 });
 
-// ─── PATCH /api/v1/chats/:chatId ─────────────────────────────────────────────────
+// ─── PATCH /api/v1/chats/:chatId ─────────────────────────────────────────────
 describe('PATCH /api/v1/chats/:chatId', () => {
   it('updates the chat title', async () => {
     const token = await registerAndLogin();
     const create = await request(app).post('/api/v1/chats').set(authHeader(token)).send({});
-    const chatId = create.body.data.chat.id;
+    const chatId = create.body.data.chat.id as string;
 
     const res = await request(app)
       .patch(`/api/v1/chats/${chatId}`)
@@ -135,12 +132,12 @@ describe('PATCH /api/v1/chats/:chatId', () => {
   });
 });
 
-// ─── DELETE /api/v1/chats/:chatId ────────────────────────────────────────────────
+// ─── DELETE /api/v1/chats/:chatId ────────────────────────────────────────────
 describe('DELETE /api/v1/chats/:chatId', () => {
   it('deletes the chat and returns 204', async () => {
     const token = await registerAndLogin();
     const create = await request(app).post('/api/v1/chats').set(authHeader(token)).send({});
-    const chatId = create.body.data.chat.id;
+    const chatId = create.body.data.chat.id as string;
 
     const del = await request(app).delete(`/api/v1/chats/${chatId}`).set(authHeader(token));
     expect(del.status).toBe(204);
@@ -150,12 +147,12 @@ describe('DELETE /api/v1/chats/:chatId', () => {
   });
 });
 
-// ─── POST /api/v1/chats/:chatId/messages ────────────────────────────────────────
+// ─── POST /api/v1/chats/:chatId/messages ─────────────────────────────────────
 describe('POST /api/v1/chats/:chatId/messages', () => {
   it('saves user and assistant messages, returns 201', async () => {
     const token = await registerAndLogin();
     const create = await request(app).post('/api/v1/chats').set(authHeader(token)).send({});
-    const chatId = create.body.data.chat.id;
+    const chatId = create.body.data.chat.id as string;
 
     const res = await request(app)
       .post(`/api/v1/chats/${chatId}/messages`)
@@ -170,7 +167,7 @@ describe('POST /api/v1/chats/:chatId/messages', () => {
   it('auto-titles the chat from the first message', async () => {
     const token = await registerAndLogin();
     const create = await request(app).post('/api/v1/chats').set(authHeader(token)).send({});
-    const chatId = create.body.data.chat.id;
+    const chatId = create.body.data.chat.id as string;
 
     await request(app)
       .post(`/api/v1/chats/${chatId}/messages`)
@@ -184,7 +181,7 @@ describe('POST /api/v1/chats/:chatId/messages', () => {
   it('returns 400 when content is empty', async () => {
     const token = await registerAndLogin();
     const create = await request(app).post('/api/v1/chats').set(authHeader(token)).send({});
-    const chatId = create.body.data.chat.id;
+    const chatId = create.body.data.chat.id as string;
 
     const res = await request(app)
       .post(`/api/v1/chats/${chatId}/messages`)
@@ -195,7 +192,7 @@ describe('POST /api/v1/chats/:chatId/messages', () => {
   });
 });
 
-// ─── GET /api/v1/chats/models ────────────────────────────────────────────────────
+// ─── GET /api/v1/chats/models ─────────────────────────────────────────────────
 describe('GET /api/v1/chats/models', () => {
   it('returns a paginated model list with pagination metadata', async () => {
     const token = await registerAndLogin();

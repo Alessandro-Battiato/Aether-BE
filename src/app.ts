@@ -15,7 +15,7 @@ app.use(helmet());
 app.use(
   cors({
     origin: env.CLIENT_URL,
-    credentials: true, // required for cookies
+    credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   }),

@@ -1,18 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AppError } from '../../../src/middleware/errorHandler.js';
 
-// Mock the OpenAI constructor before importing the service
 vi.mock('openai', () => {
   const mockCreate = vi.fn();
   return {
     default: vi.fn().mockImplementation(() => ({
-      chat: {
-        completions: {
-          create: mockCreate,
-        },
-      },
+      chat: { completions: { create: mockCreate } },
     })),
-    // expose so tests can reach it
     __mockCreate: mockCreate,
   };
 });
@@ -48,16 +42,15 @@ describe('generateResponse', () => {
 });
 
 describe('generateResponseStream', () => {
-  it('calls create with stream: true', async () => {
+  it('calls create with stream: true', () => {
     const fakeStream = { [Symbol.asyncIterator]: vi.fn() };
     getMockCreate().mockResolvedValue(fakeStream);
 
-    const stream = generateResponseStream({
+    generateResponseStream({
       messages: [{ role: 'user', content: 'Hi' }],
       model: 'openai/gpt-4o-mini',
     });
 
-    // It returns a promise/stream — just verify the call args
     expect(getMockCreate()).toHaveBeenCalledWith(
       expect.objectContaining({ stream: true }),
     );
@@ -79,7 +72,7 @@ describe('getModels', () => {
     fetchSpy.mockResolvedValue({
       ok: true,
       json: async () => ({ data: rawModels }),
-    });
+    } as Response);
 
     const result = await getModels({ page: 2, limit: 10 });
 
@@ -93,7 +86,7 @@ describe('getModels', () => {
   });
 
   it('throws AppError 502 when OpenRouter responds with an error', async () => {
-    fetchSpy.mockResolvedValue({ ok: false });
+    fetchSpy.mockResolvedValue({ ok: false } as Response);
 
     await expect(getModels()).rejects.toMatchObject({ statusCode: 502 });
   });

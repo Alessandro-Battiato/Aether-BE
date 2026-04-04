@@ -6,8 +6,7 @@ const server = app.listen(env.PORT, () => {
   console.log(`Server running on http://localhost:${env.PORT} [${env.NODE_ENV}]`);
 });
 
-// Graceful shutdown — close DB connection before exiting
-const shutdown = async (signal) => {
+const shutdown = async (signal: string): Promise<void> => {
   console.log(`\n${signal} received — shutting down gracefully…`);
   server.close(async () => {
     await prisma.$disconnect();

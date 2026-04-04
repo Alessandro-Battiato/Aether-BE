@@ -1,19 +1,25 @@
+import type { Request, Response, NextFunction } from 'express';
+
 export class AppError extends Error {
-  /**
-   * @param {string} message  Human-readable error message
-   * @param {number} statusCode  HTTP status code (default 500)
-   */
-  constructor(message, statusCode = 500) {
+  readonly statusCode: number;
+  readonly isOperational = true;
+
+  constructor(message: string, statusCode = 500) {
     super(message);
     this.name = 'AppError';
     this.statusCode = statusCode;
-    this.isOperational = true;
     Error.captureStackTrace(this, this.constructor);
   }
 }
 
-/** Express global error-handling middleware (must have 4 params). */
-export const errorHandler = (err, req, res, _next) => {
+type ErrorWithMeta = Error & { statusCode?: number; isOperational?: boolean };
+
+export const errorHandler = (
+  err: ErrorWithMeta,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
+): void => {
   const statusCode = err.statusCode ?? 500;
   const message = err.isOperational ? err.message : 'Internal server error';
 

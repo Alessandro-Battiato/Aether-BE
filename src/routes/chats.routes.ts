@@ -6,7 +6,6 @@ import * as chatsController from '../controllers/chats.controller.js';
 
 const router = Router();
 
-// All chat routes require authentication
 router.use(authenticate);
 
 const chatIdParam = param('chatId').isString().notEmpty().withMessage('chatId is required');
@@ -44,12 +43,7 @@ router.patch(
 router.delete('/:chatId', [chatIdParam], validate, chatsController.deleteChat);
 
 // ─── messages ────────────────────────────────────────────────────────────────
-router.post(
-  '/:chatId/messages',
-  [chatIdParam, contentBody],
-  validate,
-  chatsController.sendMessage,
-);
+router.post('/:chatId/messages', [chatIdParam, contentBody], validate, chatsController.sendMessage);
 
 // SSE streaming endpoint — client must request with Accept: text/event-stream
 router.post(
