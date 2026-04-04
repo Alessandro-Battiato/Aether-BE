@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "REST API backend for GPT Clone — Express + Prisma + PostgreSQL + OpenRouter",
   "type": "module",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
-    "dev": "node --watch server.js",
-    "start": "node server.js",
+    "dev": "tsx watch server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -17,7 +18,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:test": "dotenv -e .env.test -- prisma migrate deploy",
     "db:push": "prisma db push",
-    "db:seed": "node prisma/seed.js",
+    "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset"
   },
@@ -38,10 +39,19 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.5.2",
+    "@types/supertest": "^7.2.0",
     "@vitest/coverage-v8": "^2.1.4",
     "dotenv-cli": "^7.4.4",
     "prisma": "^7.6.0",
     "supertest": "^7.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
     "vitest": "^2.1.4"
   },
   "engines": {
