@@ -1,5 +1,5 @@
 /**
- * Integration tests for /api/auth
+ * Integration tests for /api/v1/auth
  *
  * These tests hit a real Express app wired to a real PostgreSQL database.
  * Set TEST_DATABASE_URL in .env.test and run `prisma migrate deploy` first.
@@ -33,10 +33,10 @@ beforeEach(async () => {
   await prisma.user.deleteMany();
 });
 
-// ─── POST /api/auth/register ─────────────────────────────────────────────────
-describe('POST /api/auth/register', () => {
+// ─── POST /api/v1/auth/register ─────────────────────────────────────────────────
+describe('POST /api/v1/auth/register', () => {
   it('returns 201 and a token for valid input', async () => {
-    const res = await request(app).post('/api/auth/register').send({
+    const res = await request(app).post('/api/v1/auth/register').send({
       name: 'Alice',
       email: 'alice@test.com',
       password: 'password123',
@@ -49,13 +49,13 @@ describe('POST /api/auth/register', () => {
   });
 
   it('returns 409 when email is already taken', async () => {
-    await request(app).post('/api/auth/register').send({
+    await request(app).post('/api/v1/auth/register').send({
       name: 'Alice',
       email: 'alice@test.com',
       password: 'password123',
     });
 
-    const res = await request(app).post('/api/auth/register').send({
+    const res = await request(app).post('/api/v1/auth/register').send({
       name: 'Alice2',
       email: 'alice@test.com',
       password: 'password456',
@@ -65,13 +65,13 @@ describe('POST /api/auth/register', () => {
   });
 
   it('returns 400 for missing required fields', async () => {
-    const res = await request(app).post('/api/auth/register').send({ email: 'x@x.com' });
+    const res = await request(app).post('/api/v1/auth/register').send({ email: 'x@x.com' });
     expect(res.status).toBe(400);
     expect(res.body.errors).toBeDefined();
   });
 
   it('returns 400 for a password shorter than 8 chars', async () => {
-    const res = await request(app).post('/api/auth/register').send({
+    const res = await request(app).post('/api/v1/auth/register').send({
       name: 'Bob',
       email: 'bob@test.com',
       password: 'short',
@@ -80,10 +80,10 @@ describe('POST /api/auth/register', () => {
   });
 });
 
-// ─── POST /api/auth/login ─────────────────────────────────────────────────────
-describe('POST /api/auth/login', () => {
+// ─── POST /api/v1/auth/login ─────────────────────────────────────────────────────
+describe('POST /api/v1/auth/login', () => {
   beforeEach(async () => {
-    await request(app).post('/api/auth/register').send({
+    await request(app).post('/api/v1/auth/register').send({
       name: 'Alice',
       email: 'alice@test.com',
       password: 'password123',
@@ -91,7 +91,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('returns 200 and a token for valid credentials', async () => {
-    const res = await request(app).post('/api/auth/login').send({
+    const res = await request(app).post('/api/v1/auth/login').send({
       email: 'alice@test.com',
       password: 'password123',
     });
@@ -101,7 +101,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('returns 401 for wrong password', async () => {
-    const res = await request(app).post('/api/auth/login').send({
+    const res = await request(app).post('/api/v1/auth/login').send({
       email: 'alice@test.com',
       password: 'wrong',
     });
@@ -109,7 +109,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('returns 401 for unknown email', async () => {
-    const res = await request(app).post('/api/auth/login').send({
+    const res = await request(app).post('/api/v1/auth/login').send({
       email: 'nobody@test.com',
       password: 'password123',
     });
@@ -117,17 +117,17 @@ describe('POST /api/auth/login', () => {
   });
 });
 
-// ─── GET /api/auth/me ─────────────────────────────────────────────────────────
-describe('GET /api/auth/me', () => {
+// ─── GET /api/v1/auth/me ─────────────────────────────────────────────────────────
+describe('GET /api/v1/auth/me', () => {
   it('returns the user when authenticated', async () => {
-    const reg = await request(app).post('/api/auth/register').send({
+    const reg = await request(app).post('/api/v1/auth/register').send({
       name: 'Alice',
       email: 'alice@test.com',
       password: 'password123',
     });
 
     const res = await request(app)
-      .get('/api/auth/me')
+      .get('/api/v1/auth/me')
       .set('Authorization', `Bearer ${reg.body.data.token}`);
 
     expect(res.status).toBe(200);
@@ -135,7 +135,7 @@ describe('GET /api/auth/me', () => {
   });
 
   it('returns 401 without a token', async () => {
-    const res = await request(app).get('/api/auth/me');
+    const res = await request(app).get('/api/v1/auth/me');
     expect(res.status).toBe(401);
   });
 });

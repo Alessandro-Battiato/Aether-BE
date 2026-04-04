@@ -27,7 +27,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 // ─── API routes ──────────────────────────────────────────────────────────────
-app.use('/api', routes);
+app.use('/api/v1', routes);
 
 // ─── 404 fallthrough ─────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ status: 'error', message: 'Route not found' }));
