@@ -38,14 +38,19 @@ export const generateResponseStream = ({ messages, model }) => {
 };
 
 /**
- * Fetch the list of models available on OpenRouter.
- * Returns a simplified array: [{ id, name, description }]
+ * Fetch the list of models available on OpenRouter with offset-based pagination.
+ * @param {{ page?: number, limit?: number }} options
+ * @returns {{ models: {id,name,description}[], total: number, page: number, limit: number, totalPages: number }}
  */
-export const getModels = async () => {
+export const getModels = async ({ page = 1, limit = 20 } = {}) => {
   const res = await fetch(`${env.OPENROUTER_BASE_URL}/models`, {
     headers: { Authorization: `Bearer ${env.OPENROUTER_API_KEY}` },
   });
   if (!res.ok) throw new AppError('Failed to fetch models from OpenRouter', 502);
   const { data } = await res.json();
-  return (data ?? []).map(({ id, name, description }) => ({ id, name, description }));
+  const all = (data ?? []).map(({ id, name, description }) => ({ id, name, description }));
+  const total = all.length;
+  const totalPages = Math.ceil(total / limit) || 1;
+  const models = all.slice((page - 1) * limit, page * limit);
+  return { models, total, page, limit, totalPages };
 };

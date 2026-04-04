@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AppError } from '../../../src/middleware/errorHandler.js';
 
 // Mock the OpenAI constructor before importing the service
@@ -18,7 +18,7 @@ vi.mock('openai', () => {
 });
 
 import OpenAI from 'openai';
-import { generateResponse, generateResponseStream } from '../../../src/services/ai.service.js';
+import { generateResponse, generateResponseStream, getModels } from '../../../src/services/ai.service.js';
 
 const getMockCreate = () => new OpenAI().chat.completions.create;
 
@@ -61,5 +61,40 @@ describe('generateResponseStream', () => {
     expect(getMockCreate()).toHaveBeenCalledWith(
       expect.objectContaining({ stream: true }),
     );
+  });
+});
+
+describe('getModels', () => {
+  const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+  afterEach(() => fetchSpy.mockReset());
+
+  it('returns paginated models with metadata', async () => {
+    const rawModels = Array.from({ length: 25 }, (_, i) => ({
+      id: `model-${i}`,
+      name: `Model ${i}`,
+      description: `Desc ${i}`,
+      extra: 'stripped',
+    }));
+    fetchSpy.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: rawModels }),
+    });
+
+    const result = await getModels({ page: 2, limit: 10 });
+
+    expect(result.total).toBe(25);
+    expect(result.page).toBe(2);
+    expect(result.limit).toBe(10);
+    expect(result.totalPages).toBe(3);
+    expect(result.models).toHaveLength(10);
+    expect(result.models[0]).toEqual({ id: 'model-10', name: 'Model 10', description: 'Desc 10' });
+    expect(result.models[0]).not.toHaveProperty('extra');
+  });
+
+  it('throws AppError 502 when OpenRouter responds with an error', async () => {
+    fetchSpy.mockResolvedValue({ ok: false });
+
+    await expect(getModels()).rejects.toMatchObject({ statusCode: 502 });
   });
 });

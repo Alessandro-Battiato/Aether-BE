@@ -11,7 +11,15 @@ import { PrismaClient } from '@prisma/client';
 vi.mock('../../src/services/ai.service.js', () => ({
   generateResponse: vi.fn().mockResolvedValue('Mocked AI response'),
   generateResponseStream: vi.fn(),
-  getModels: vi.fn().mockResolvedValue([{ id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' }]),
+  getModels: vi.fn().mockImplementation(({ page = 1, limit = 20 } = {}) =>
+    Promise.resolve({
+      models: [{ id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' }],
+      total: 1,
+      page,
+      limit,
+      totalPages: 1,
+    }),
+  ),
 }));
 
 const DATABASE_URL = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
@@ -189,11 +197,26 @@ describe('POST /api/v1/chats/:chatId/messages', () => {
 
 // ─── GET /api/v1/chats/models ────────────────────────────────────────────────────
 describe('GET /api/v1/chats/models', () => {
-  it('returns the model list', async () => {
+  it('returns a paginated model list with pagination metadata', async () => {
     const token = await registerAndLogin();
     const res = await request(app).get('/api/v1/chats/models').set(authHeader(token));
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data.models)).toBe(true);
+    expect(typeof res.body.data.total).toBe('number');
+    expect(typeof res.body.data.page).toBe('number');
+    expect(typeof res.body.data.limit).toBe('number');
+    expect(typeof res.body.data.totalPages).toBe('number');
+  });
+
+  it('respects page and limit query params', async () => {
+    const token = await registerAndLogin();
+    const res = await request(app)
+      .get('/api/v1/chats/models?page=2&limit=5')
+      .set(authHeader(token));
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.page).toBe(2);
+    expect(res.body.data.limit).toBe(5);
   });
 });

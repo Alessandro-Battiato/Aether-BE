@@ -77,10 +77,12 @@ export const streamMessage = async (req, res, next) => {
   }
 };
 
-export const getModels = async (_req, res, next) => {
+export const getModels = async (req, res, next) => {
   try {
-    const models = await aiService.getModels();
-    res.json({ status: 'success', data: { models } });
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const result = await aiService.getModels({ page, limit });
+    res.json({ status: 'success', data: result });
   } catch (err) {
     next(err);
   }
