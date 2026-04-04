@@ -40,6 +40,7 @@ describe('POST /api/v1/auth/register', () => {
       name: 'Alice',
       email: 'alice@test.com',
       password: 'password123',
+      passwordConfirm: 'password123',
     });
 
     expect(res.status).toBe(201);
@@ -53,12 +54,14 @@ describe('POST /api/v1/auth/register', () => {
       name: 'Alice',
       email: 'alice@test.com',
       password: 'password123',
+      passwordConfirm: 'password123',
     });
 
     const res = await request(app).post('/api/v1/auth/register').send({
       name: 'Alice2',
       email: 'alice@test.com',
       password: 'password456',
+      passwordConfirm: 'password456',
     });
 
     expect(res.status).toBe(409);
@@ -75,8 +78,20 @@ describe('POST /api/v1/auth/register', () => {
       name: 'Bob',
       email: 'bob@test.com',
       password: 'short',
+      passwordConfirm: 'short',
     });
     expect(res.status).toBe(400);
+  });
+
+  it('returns 400 when passwordConfirm does not match password', async () => {
+    const res = await request(app).post('/api/v1/auth/register').send({
+      name: 'Bob',
+      email: 'bob@test.com',
+      password: 'password123',
+      passwordConfirm: 'different456',
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.errors.some((e) => e.path === 'passwordConfirm')).toBe(true);
   });
 });
 
@@ -87,6 +102,7 @@ describe('POST /api/v1/auth/login', () => {
       name: 'Alice',
       email: 'alice@test.com',
       password: 'password123',
+      passwordConfirm: 'password123',
     });
   });
 
@@ -124,6 +140,7 @@ describe('GET /api/v1/auth/me', () => {
       name: 'Alice',
       email: 'alice@test.com',
       password: 'password123',
+      passwordConfirm: 'password123',
     });
 
     const res = await request(app)

@@ -27,6 +27,7 @@ const registerAndLogin = async (email = 'test@test.com') => {
     name: 'Test User',
     email,
     password: 'password123',
+    passwordConfirm: 'password123',
   });
   return res.body.data.token;
 };
