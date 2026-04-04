@@ -9,6 +9,7 @@ dist/
 
 # Prisma generated client (regenerated via db:generate)
 node_modules/.prisma/
+src/generated/
 
 # Coverage
 coverage/

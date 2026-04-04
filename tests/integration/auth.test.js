@@ -9,17 +9,13 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
-
-// ─── Use the test database ────────────────────────────────────────────────────
-const DATABASE_URL = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
-process.env.DATABASE_URL = DATABASE_URL;
+import { PrismaPg } from '@prisma/adapter-pg';
 
 import app from '../../src/app.js';
 
-const prisma = new PrismaClient({ datasources: { db: { url: DATABASE_URL } } });
-
-beforeAll(async () => {
-  await prisma.$connect();
+// DATABASE_URL is set to the test DB by tests/setup.js before this file loads.
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
 
 afterAll(async () => {

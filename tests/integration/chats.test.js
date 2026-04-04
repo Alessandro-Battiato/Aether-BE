@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 // Mock AI before any app imports resolve
 vi.mock('../../src/services/ai.service.js', () => ({
@@ -22,12 +23,12 @@ vi.mock('../../src/services/ai.service.js', () => ({
   ),
 }));
 
-const DATABASE_URL = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
-process.env.DATABASE_URL = DATABASE_URL;
-
 import app from '../../src/app.js';
 
-const prisma = new PrismaClient({ datasources: { db: { url: DATABASE_URL } } });
+// DATABASE_URL is set to the test DB by tests/setup.js before this file loads.
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const registerAndLogin = async (email = 'test@test.com') => {
@@ -43,7 +44,6 @@ const registerAndLogin = async (email = 'test@test.com') => {
 const authHeader = (token) => ({ Authorization: `Bearer ${token}` });
 
 // ─── Setup / teardown ─────────────────────────────────────────────────────────
-beforeAll(() => prisma.$connect());
 afterAll(() => prisma.$disconnect());
 
 beforeEach(async () => {
