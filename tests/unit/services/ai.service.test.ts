@@ -55,6 +55,16 @@ describe('generateResponseStream', () => {
       expect.objectContaining({ stream: true }),
     );
   });
+
+  it('wraps synchronous create errors in AppError with status 502', () => {
+    getMockCreate().mockImplementation(() => {
+      throw new Error('sync error');
+    });
+
+    expect(() =>
+      generateResponseStream({ messages: [], model: 'openai/gpt-4o-mini' }),
+    ).toThrow(AppError);
+  });
 });
 
 describe('getModels', () => {

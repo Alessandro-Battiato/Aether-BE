@@ -22,6 +22,8 @@ vi.mock('../../src/services/ai.service.js', () => ({
   ),
 }));
 
+import * as aiService from '../../src/services/ai.service.js';
+
 import app from '../../src/app.js';
 
 // DATABASE_URL is set to the test DB by tests/setup.ts before this file loads.
@@ -189,6 +191,51 @@ describe('POST /api/v1/chats/:chatId/messages', () => {
       .send({ content: '' });
 
     expect(res.status).toBe(400);
+  });
+});
+
+// ─── POST /api/v1/chats/:chatId/messages/stream ───────────────────────────────
+describe('POST /api/v1/chats/:chatId/messages/stream', () => {
+  it('streams delta chunks and ends with a done event', async () => {
+    async function* fakeStream() {
+      yield { choices: [{ delta: { content: 'Hello' } }] };
+      yield { choices: [{ delta: { content: ' world' } }] };
+    }
+    vi.mocked(aiService.generateResponseStream).mockResolvedValue(fakeStream() as never);
+
+    const token = await registerAndLogin();
+    const create = await request(app).post('/api/v1/chats').set(authHeader(token)).send({});
+    const chatId = create.body.data.chat.id as string;
+
+    const res = await request(app)
+      .post(`/api/v1/chats/${chatId}/messages/stream`)
+      .set(authHeader(token))
+      .send({ content: 'Hi!' });
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/event-stream');
+    expect(res.text).toContain('"delta":"Hello"');
+    expect(res.text).toContain('"delta":" world"');
+    expect(res.text).toContain('"done":true');
+  });
+
+  it('auto-titles the chat from the first streamed message', async () => {
+    async function* fakeStream() {
+      yield { choices: [{ delta: { content: 'answer' } }] };
+    }
+    vi.mocked(aiService.generateResponseStream).mockResolvedValue(fakeStream() as never);
+
+    const token = await registerAndLogin();
+    const create = await request(app).post('/api/v1/chats').set(authHeader(token)).send({});
+    const chatId = create.body.data.chat.id as string;
+
+    await request(app)
+      .post(`/api/v1/chats/${chatId}/messages/stream`)
+      .set(authHeader(token))
+      .send({ content: 'First streamed question' });
+
+    const chat = await request(app).get(`/api/v1/chats/${chatId}`).set(authHeader(token));
+    expect(chat.body.data.chat.title).toBe('First streamed question');
   });
 });
 

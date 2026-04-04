@@ -126,6 +126,15 @@ describe('POST /api/v1/auth/login', () => {
   });
 });
 
+// ─── POST /api/v1/auth/logout ────────────────────────────────────────────────
+describe('POST /api/v1/auth/logout', () => {
+  it('clears the auth cookie and returns success', async () => {
+    const res = await request(app).post('/api/v1/auth/logout');
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('success');
+  });
+});
+
 // ─── GET /api/v1/auth/me ─────────────────────────────────────────────────────
 describe('GET /api/v1/auth/me', () => {
   it('returns the user when authenticated', async () => {

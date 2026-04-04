@@ -27,7 +27,9 @@ import {
   updateChat,
   deleteChat,
   sendMessage,
+  streamMessage,
 } from '../../../src/services/chats.service.js';
+import type { Response } from 'express';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -165,5 +167,68 @@ describe('sendMessage', () => {
   it('throws 404 when chat not found', async () => {
     vi.mocked(prisma.chat.findFirst).mockResolvedValue(null);
     await expect(sendMessage(USER_ID, CHAT_ID, 'Hi')).rejects.toMatchObject({ statusCode: 404 });
+  });
+});
+
+// ─── streamMessage ────────────────────────────────────────────────────────────
+describe('streamMessage', () => {
+  const createMockRes = () =>
+    ({
+      setHeader: vi.fn(),
+      flushHeaders: vi.fn(),
+      write: vi.fn(),
+      end: vi.fn(),
+    }) as unknown as Response;
+
+  beforeEach(() => {
+    vi.mocked(prisma.chat.findFirst).mockResolvedValue({
+      id: CHAT_ID,
+      model: 'openai/gpt-4o-mini',
+      messages: [],
+    } as never);
+    vi.mocked(prisma.message.create)
+      .mockResolvedValueOnce({ id: 'msg-1', role: 'user', content: 'Hello' } as never)
+      .mockResolvedValueOnce({ id: 'msg-2', role: 'assistant', content: 'Hi!' } as never);
+    vi.mocked(prisma.chat.update).mockResolvedValue({} as never);
+  });
+
+  it('sets SSE headers, writes delta chunks, and ends with a done event', async () => {
+    async function* fakeStream() {
+      yield { choices: [{ delta: { content: 'Hi' } }] };
+      yield { choices: [{ delta: { content: '!' } }] };
+    }
+    vi.mocked(aiService.generateResponseStream).mockResolvedValue(fakeStream() as never);
+
+    const res = createMockRes();
+    await streamMessage(USER_ID, CHAT_ID, 'Hello', res);
+
+    expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/event-stream');
+    expect(res.flushHeaders).toHaveBeenCalled();
+    expect(res.write).toHaveBeenCalledWith(expect.stringContaining('"delta":"Hi"'));
+    expect(res.write).toHaveBeenCalledWith(expect.stringContaining('"delta":"!"'));
+    expect(res.write).toHaveBeenCalledWith(expect.stringContaining('"done":true'));
+    expect(res.end).toHaveBeenCalled();
+  });
+
+  it('auto-titles the chat on the first streamed message', async () => {
+    async function* fakeStream() {
+      yield { choices: [{ delta: { content: 'answer' } }] };
+    }
+    vi.mocked(aiService.generateResponseStream).mockResolvedValue(fakeStream() as never);
+
+    await streamMessage(USER_ID, CHAT_ID, 'First question', createMockRes());
+
+    expect(prisma.chat.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ title: 'First question' }),
+      }),
+    );
+  });
+
+  it('throws 404 when chat not found', async () => {
+    vi.mocked(prisma.chat.findFirst).mockResolvedValue(null);
+    await expect(
+      streamMessage(USER_ID, CHAT_ID, 'Hello', createMockRes()),
+    ).rejects.toMatchObject({ statusCode: 404 });
   });
 });
