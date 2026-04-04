@@ -84,7 +84,7 @@ describe('POST /api/v1/auth/register', () => {
       passwordConfirm: 'different456',
     });
     expect(res.status).toBe(400);
-    expect(res.body.errors.some((e: { path: string }) => e.path === 'passwordConfirm')).toBe(true);
+    expect(res.body.errors.some((e: { field: string }) => e.field === 'passwordConfirm')).toBe(true);
   });
 });
 
