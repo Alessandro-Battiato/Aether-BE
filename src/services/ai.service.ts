@@ -57,6 +57,30 @@ export const generateResponseStream = ({
   }
 };
 
+// ─── Model validation (cached) ───────────────────────────────────────────────
+
+let _modelCache: { ids: Set<string>; fetchedAt: number } | null = null;
+const MODEL_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Returns true if modelId exists on OpenRouter.
+ * Fetches the model list once and caches it for MODEL_CACHE_TTL ms.
+ * Fails open (returns true) if OpenRouter is unreachable, so a temporary
+ * outage doesn't break chat creation.
+ */
+export const isValidModel = async (modelId: string): Promise<boolean> => {
+  const now = Date.now();
+  if (!_modelCache || now - _modelCache.fetchedAt > MODEL_CACHE_TTL) {
+    const res = await fetch(`${env.OPENROUTER_BASE_URL}/models`, {
+      headers: { Authorization: `Bearer ${env.OPENROUTER_API_KEY}` },
+    });
+    if (!res.ok) return true; // fail open
+    const { data } = (await res.json()) as { data?: { id: string }[] };
+    _modelCache = { ids: new Set((data ?? []).map((m) => m.id)), fetchedAt: now };
+  }
+  return _modelCache.ids.has(modelId);
+};
+
 export const getModels = async ({ page = 1, limit = 20 }: { page?: number; limit?: number } = {}): Promise<PaginatedModels> => {
   const res = await fetch(`${env.OPENROUTER_BASE_URL}/models`, {
     headers: { Authorization: `Bearer ${env.OPENROUTER_API_KEY}` },

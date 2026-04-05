@@ -21,10 +21,15 @@ export const getChats = (userId: string) =>
     select: { id: true, title: true, model: true, createdAt: true, updatedAt: true },
   });
 
-export const createChat = (userId: string, { title, model }: { title?: string; model?: string } = {}) =>
-  prisma.chat.create({
-    data: { userId, title: title ?? 'New Chat', model: model ?? DEFAULT_MODEL },
+export const createChat = async (userId: string, { title, model }: { title?: string; model?: string } = {}) => {
+  const resolvedModel = model ?? DEFAULT_MODEL;
+  if (model && !(await aiService.isValidModel(model))) {
+    throw new AppError(`Model '${model}' does not exist on OpenRouter`, 400);
+  }
+  return prisma.chat.create({
+    data: { userId, title: title ?? 'New Chat', model: resolvedModel },
   });
+};
 
 export const getChat = async (userId: string, chatId: string) => {
   const chat = await prisma.chat.findFirst({
@@ -40,6 +45,9 @@ export const updateChat = async (
   chatId: string,
   data: { title?: string; model?: string },
 ) => {
+  if (data.model && !(await aiService.isValidModel(data.model))) {
+    throw new AppError(`Model '${data.model}' does not exist on OpenRouter`, 400);
+  }
   await assertOwner(userId, chatId);
   return prisma.chat.update({ where: { id: chatId }, data });
 };
