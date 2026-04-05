@@ -11,6 +11,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 vi.mock('../../src/services/ai.service.js', () => ({
   generateResponse: vi.fn().mockResolvedValue('Mocked AI response'),
   generateResponseStream: vi.fn(),
+  isValidModel: vi.fn().mockResolvedValue(true),
   getModels: vi.fn().mockImplementation(({ page = 1, limit = 20 }: { page?: number; limit?: number } = {}) =>
     Promise.resolve({
       models: [{ id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' }],

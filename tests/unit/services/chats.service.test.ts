@@ -16,6 +16,7 @@ vi.mock('../../../src/lib/prisma.js', () => ({
 vi.mock('../../../src/services/ai.service.js', () => ({
   generateResponse: vi.fn(),
   generateResponseStream: vi.fn(),
+  isValidModel: vi.fn().mockResolvedValue(true),
 }));
 
 import { prisma } from '../../../src/lib/prisma.js';
