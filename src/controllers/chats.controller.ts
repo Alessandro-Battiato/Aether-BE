@@ -2,6 +2,8 @@ import type { Request, Response, NextFunction } from 'express';
 import * as chatsService from '../services/chats.service.js';
 import * as aiService from '../services/ai.service.js';
 
+type ChatParams = { chatId: string };
+
 export const getChats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const chats = await chatsService.getChats(req.user!.id);
@@ -20,7 +22,7 @@ export const createChat = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const getChat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getChat = async (req: Request<ChatParams>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const chat = await chatsService.getChat(req.user!.id, req.params.chatId);
     res.json({ status: 'success', data: { chat } });
@@ -29,7 +31,7 @@ export const getChat = async (req: Request, res: Response, next: NextFunction): 
   }
 };
 
-export const updateChat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const updateChat = async (req: Request<ChatParams>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const chat = await chatsService.updateChat(
       req.user!.id,
@@ -42,7 +44,7 @@ export const updateChat = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const deleteChat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const deleteChat = async (req: Request<ChatParams>, res: Response, next: NextFunction): Promise<void> => {
   try {
     await chatsService.deleteChat(req.user!.id, req.params.chatId);
     res.status(204).send();
@@ -51,7 +53,7 @@ export const deleteChat = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const sendMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const sendMessage = async (req: Request<ChatParams>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { content } = req.body as { content: string };
     const result = await chatsService.sendMessage(req.user!.id, req.params.chatId, content);
@@ -61,7 +63,7 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const streamMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const streamMessage = async (req: Request<ChatParams>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { content } = req.body as { content: string };
     await chatsService.streamMessage(req.user!.id, req.params.chatId, content, res);

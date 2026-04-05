@@ -12,7 +12,9 @@ const SAFE_USER_SELECT = {
 } as const;
 
 const signToken = (userId: string): string =>
-  jwt.sign({ sub: userId }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
+  jwt.sign({ sub: userId }, env.JWT_SECRET, {
+    expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'],
+  });
 
 export const register = async ({
   email,
