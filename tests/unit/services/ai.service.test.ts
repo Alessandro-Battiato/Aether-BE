@@ -14,7 +14,7 @@ vi.mock('openai', () => {
 import OpenAI from 'openai';
 import { generateResponse, generateResponseStream, getModels } from '../../../src/services/ai.service.js';
 
-const getMockCreate = () => new OpenAI().chat.completions.create;
+const getMockCreate = () => vi.mocked(new OpenAI().chat.completions.create);
 
 beforeEach(() => vi.clearAllMocks());
 
