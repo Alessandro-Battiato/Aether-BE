@@ -22,7 +22,7 @@ describe('generateResponse', () => {
   it('returns the content string from the completion', async () => {
     getMockCreate().mockResolvedValue({
       choices: [{ message: { content: 'Hello!' } }],
-    });
+    } as never);
 
     const result = await generateResponse({
       messages: [{ role: 'user', content: 'Hi' }],
@@ -44,7 +44,7 @@ describe('generateResponse', () => {
 describe('generateResponseStream', () => {
   it('calls create with stream: true', () => {
     const fakeStream = { [Symbol.asyncIterator]: vi.fn() };
-    getMockCreate().mockResolvedValue(fakeStream);
+    getMockCreate().mockResolvedValue(fakeStream as never);
 
     generateResponseStream({
       messages: [{ role: 'user', content: 'Hi' }],
