@@ -1,6 +1,6 @@
-# GPTClone — Server
+# Aether — Server
 
-REST API backend for a ChatGPT-style clone. Built with Node.js, Express, Prisma, and OpenRouter.
+REST API backend for Aether. Built with Node.js, Express, Prisma, and OpenRouter.
 
 ## Stack
 
@@ -114,7 +114,7 @@ All chat endpoints require authentication (`Authorization: Bearer <token>` or `t
 | `POST` | `/chats/:chatId/messages/stream` | Send a message (SSE streaming) |
 | `GET` | `/chats/models` | List available AI models (paginated) |
 
-**Models query params:** `?page=1&limit=20` (limit capped at 100)
+**Models query params:** `?page=1&limit=20&free=true` (limit capped at 100; `free=true` returns only zero-cost models)
 
 **Streaming** uses Server-Sent Events. Events:
 ```

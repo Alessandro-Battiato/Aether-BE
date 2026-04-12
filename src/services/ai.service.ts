@@ -24,7 +24,7 @@ const openai = new OpenAI({
   baseURL: env.OPENROUTER_BASE_URL,
   defaultHeaders: {
     'HTTP-Referer': env.CLIENT_URL,
-    'X-Title': 'GPT Clone',
+    'X-Title': 'Aether',
   },
 });
 
@@ -69,8 +69,16 @@ const BROKEN_PROVIDERS = [
   'nousresearch/',
 ];
 
+// Individual model IDs that are broken but belong to otherwise-fine providers.
+const BROKEN_MODEL_IDS = new Set([
+  'cognitivecomputations/dolphin-mistral-24b-venice-edition:free',
+]);
+
 function isBlocked(model: RawModel): boolean {
-  return BROKEN_PROVIDERS.some((prefix) => model.id.startsWith(prefix));
+  return (
+    BROKEN_PROVIDERS.some((prefix) => model.id.startsWith(prefix)) ||
+    BROKEN_MODEL_IDS.has(model.id)
+  );
 }
 
 function isFree(model: RawModel): boolean {

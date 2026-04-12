@@ -1,7 +1,7 @@
 {
-  "name": "gptclone-server",
+  "name": "aether-server",
   "version": "1.0.0",
-  "description": "REST API backend for GPT Clone — Express + Prisma + PostgreSQL + OpenRouter",
+  "description": "REST API backend for Aether — Express + Prisma + PostgreSQL + OpenRouter",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
