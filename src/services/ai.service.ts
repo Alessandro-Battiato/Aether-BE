@@ -58,6 +58,21 @@ async function getAllModels(): Promise<RawModel[]> {
   return models;
 }
 
+// Providers whose models are known to fail at inference time.
+// Filtered out regardless of the ?free flag so they never reach clients.
+const BROKEN_PROVIDERS = [
+  'minimax/',
+  'google/',
+  'qwen/',
+  'venice/',
+  'meta-llama/',
+  'nousresearch/',
+];
+
+function isBlocked(model: RawModel): boolean {
+  return BROKEN_PROVIDERS.some((prefix) => model.id.startsWith(prefix));
+}
+
 function isFree(model: RawModel): boolean {
   if (model.id.endsWith(':free')) return true;
   const p = model.pricing;
@@ -130,7 +145,7 @@ export const getModels = async ({
   free?: boolean;
 } = {}): Promise<PaginatedModels> => {
   const all = await getAllModels();
-  const filtered = free ? all.filter(isFree) : all;
+  const filtered = (free ? all.filter(isFree) : all).filter((m) => !isBlocked(m));
   const total = filtered.length;
   const totalPages = Math.ceil(total / limit) || 1;
   const models = filtered
