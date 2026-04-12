@@ -12,7 +12,7 @@ vi.mock('openai', () => {
 });
 
 import OpenAI from 'openai';
-import { generateResponse, generateResponseStream, getModels } from '../../../src/services/ai.service.js';
+import { generateResponse, generateResponseStream, getModels, resetModelsCache } from '../../../src/services/ai.service.js';
 
 const getMockCreate = () => vi.mocked(new OpenAI().chat.completions.create);
 
@@ -70,7 +70,10 @@ describe('generateResponseStream', () => {
 describe('getModels', () => {
   const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
-  afterEach(() => fetchSpy.mockReset());
+  afterEach(() => {
+    fetchSpy.mockReset();
+    resetModelsCache();
+  });
 
   it('returns paginated models with metadata', async () => {
     const rawModels = Array.from({ length: 25 }, (_, i) => ({

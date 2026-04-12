@@ -38,6 +38,11 @@ const CACHE_TTL = 60 * 60 * 1000; // 1 hour
  * Both isValidModel() and getModels() share this cache so only one
  * upstream request is needed per hour regardless of how it's called.
  */
+/** Resets the in-memory cache. Intended for use in tests only. */
+export function resetModelsCache(): void {
+  _modelsCache = null;
+}
+
 async function getAllModels(): Promise<RawModel[]> {
   const now = Date.now();
   if (_modelsCache && now - _modelsCache.fetchedAt < CACHE_TTL) {
