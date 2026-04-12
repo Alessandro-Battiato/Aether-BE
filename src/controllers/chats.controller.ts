@@ -78,7 +78,8 @@ export const getModels = async (req: Request, res: Response, next: NextFunction)
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
-    const result = await aiService.getModels({ page, limit });
+    const free = req.query.free === 'true';
+    const result = await aiService.getModels({ page, limit, free });
     res.json({ status: 'success', data: result });
   } catch (err) {
     next(err);
